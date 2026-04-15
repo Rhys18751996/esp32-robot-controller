@@ -53,6 +53,7 @@ log(INFO, "System starting");
 ```
 
 ### Success Criteria:
+- Repo on github exists
 - Stable loop timing
 - Clean project structure
 - Logging works
