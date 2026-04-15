@@ -22,7 +22,7 @@ void updateLoop() {
 
         counter++;
         if (counter % 50 == 0) {
-            logf(INFO, "Alive: %lu", lastUpdate);
+            logf(INFO, "HeartBeat: %lu", lastUpdate/1000);
         }
         update();
     }
