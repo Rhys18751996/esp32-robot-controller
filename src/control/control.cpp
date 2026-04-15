@@ -1,18 +1,36 @@
-// control.cpp
+// src/control/control.cpp
 #include "../system/types.h"
+#include "../input/input.h"
 
+RawInput input;
 Intent currentIntent;
 
+void initControl() {
+    initInput();
+}
+
 void readInputs() {
-    // TODO: controller input later
+    input = readInput();
 }
 
 void mapToIntent() {
-    // TODO: convert raw input → intent
+    currentIntent.linear = input.leftStickY;
+    currentIntent.angular = input.leftStickX;
+
+    currentIntent.boost = input.cross;
+    currentIntent.stop = input.circle;
 }
 
 void applySafety() {
-    // TODO: emergency stop, limits
+    if (!input.connected) {
+        currentIntent.linear = 0;
+        currentIntent.angular = 0;
+    }
+
+    if (currentIntent.stop) {
+        currentIntent.linear = 0;
+        currentIntent.angular = 0;
+    }
 }
 
 void outputControl() {

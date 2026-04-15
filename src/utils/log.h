@@ -1,4 +1,4 @@
-// log.h
+// src/utils/log.h
 
 #pragma once
 
@@ -9,3 +9,4 @@ enum LogLevel {
 };
 
 void log(LogLevel level, const char* message);
+void logf(LogLevel level, const char* format, ...);

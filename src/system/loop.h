@@ -1,4 +1,4 @@
-// src/system/loops.h
+// src/system/loop.h
 
 #pragma once
 
