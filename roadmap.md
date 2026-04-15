@@ -5,6 +5,8 @@
 **Goal:** Establish a solid foundation before features
 
 ### Tasks:
+- Create repo
+- create boilerplate folders and files for project
 - Define core structures:
 
 ```cpp
