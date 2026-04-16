@@ -259,7 +259,7 @@ if (noInputFor > 500ms) stopMotors();
 
 ---
 
-# ✅ Phase 10 – Controller Abstraction Layer (Multi-Controller Support)
+# ✅ BONUS Phase – Controller Abstraction Layer (Multi-Controller Support)
 
 **Goal:** Decouple input system from specific controller hardware (PS4, Xbox, etc.)
 
@@ -339,5 +339,8 @@ if (noInputFor > 500ms) stopMotors();
 - Battery monitoring
 - Autonomous modes
 - OTA updates
+- GPS
 - Camera
 - Multi-robot systems
+- Articulated actuators
+- Full telemetry over API
