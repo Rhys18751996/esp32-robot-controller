@@ -14,8 +14,8 @@ enum Mode {
     RUN
 };
 
-enum ControllerState {
-    DISCONNECTED,
-    CONNECTING,
-    CONNECTED
+enum class ControllerState {
+    Disconnected,
+    Connecting,
+    Connected
 };

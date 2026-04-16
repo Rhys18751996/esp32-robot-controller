@@ -33,7 +33,7 @@ void logf(LogLevel level, const char* format, ...) {
         default: prefix = "[LOG]"; break;
     }
 
-    char buffer[100];
+    char buffer[150];
 
     va_list args;
     va_start(args, format);

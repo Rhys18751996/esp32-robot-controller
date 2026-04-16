@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "../system/types.h"
+
 struct RawInput {
     float leftStickX;
     float leftStickY;
@@ -14,6 +16,7 @@ struct RawInput {
     bool triangle;
 
     bool connected;
+    ControllerState state; 
 };
 
 void initInput();
