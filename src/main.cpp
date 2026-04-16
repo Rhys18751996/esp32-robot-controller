@@ -4,8 +4,6 @@
 #include "system/loop.h"
 #include "utils/log.h"
 #include "control/control.h"
-#include <PS4Controller.h>
-#include "esp_bt_device.h"
 
 void setup() {
     Serial.begin(115200);

@@ -1,81 +1,87 @@
-// src/input/input.cpp
-
 #include "input.h"
-#include <PS4Controller.h>
+#include <Bluepad32.h>
 
-float normalize(int value) {
-    // PS4 stick range is typically -128 → 127
-    return value / 127.0f;
+GamepadPtr myGamepad = nullptr;
+
+float normalizeAxis(int value) {
+    // Bluepad32 uses -511 → 512
+    return value / 511.0f;
 }
 
 float normalizeTrigger(int value) {
-    // Trigger range is 0 → 255
-    return value / 255.0f;
+    // 0 → 1023
+    return value / 1023.0f;
+}
+
+// --- Callbacks ---
+void onConnectedGamepad(GamepadPtr gp) {
+    Serial.println("Gamepad connected!");
+    myGamepad = gp;
+}
+
+void onDisconnectedGamepad(GamepadPtr gp) {
+    Serial.println("Gamepad disconnected!");
+    if (myGamepad == gp) {
+        myGamepad = nullptr;
+    }
 }
 
 void initInput() {
-    PS4.begin();
+    BP32.setup(&onConnectedGamepad, &onDisconnectedGamepad);
+    BP32.forgetBluetoothKeys(); // optional: forces re-pairing
 
-    PS4.attachOnConnect([]() {
-        Serial.println("PS4 Connected!");
-    });
-
-    PS4.attachOnDisconnect([]() {
-        Serial.println("PS4 Disconnected!");
-    });
-
-    Serial.println("PS4 Bluetooth ready. Hold PS + Share to pair.");
+    Serial.println("Bluepad32 ready. Pair your controller.");
 }
-
 
 RawInput readInput() {
     RawInput input = {};
 
-    input.connected = PS4.isConnected();
+    BP32.update();
+
+    input.connected = (myGamepad && myGamepad->isConnected());
     input.state = input.connected
         ? ControllerState::Connected
         : ControllerState::Disconnected;
 
     if (!input.connected) {
-        return input; // everything stays zero/false
+        return input;
     }
 
-    // --- Analog Sticks (-1.0 → 1.0) ---
-    input.leftStickX  = normalize(PS4.LStickX());
-    input.leftStickY  = -normalize(PS4.LStickY());
-    input.rightStickX = normalize(PS4.RStickX());
-    input.rightStickY = -normalize(PS4.RStickY());
+    // --- Sticks ---
+    input.leftStickX  = normalizeAxis(myGamepad->axisX());
+    input.leftStickY  = -normalizeAxis(myGamepad->axisY());
+    input.rightStickX = normalizeAxis(myGamepad->axisRX());
+    input.rightStickY = -normalizeAxis(myGamepad->axisRY());
 
-    // --- Triggers (0.0 → 1.0) ---
-    input.L2 = normalizeTrigger(PS4.L2Value());
-    input.R2 = normalizeTrigger(PS4.R2Value());
+    // --- Triggers ---
+    input.L2 = normalizeTrigger(myGamepad->brake());
+    input.R2 = normalizeTrigger(myGamepad->throttle());
 
     // --- Face Buttons ---
-    input.cross    = PS4.Cross();
-    input.circle   = PS4.Circle();
-    input.square   = PS4.Square();
-    input.triangle = PS4.Triangle();
+    input.cross    = myGamepad->a();
+    input.circle   = myGamepad->b();
+    input.square   = myGamepad->x();
+    input.triangle = myGamepad->y();
 
-    // --- Shoulder Buttons ---
-    input.L1 = PS4.L1();
-    input.R1 = PS4.R1();
+    // --- Shoulder ---
+    input.L1 = myGamepad->l1();
+    input.R1 = myGamepad->r1();
 
-    // --- Stick Clicks ---
-    input.L3 = PS4.L3();
-    input.R3 = PS4.R3();
+    // --- Stick Click ---
+    input.L3 = myGamepad->thumbL();
+    input.R3 = myGamepad->thumbR();
 
-    // --- D-Pad ---
-    input.dpadUp    = PS4.Up();
-    input.dpadDown  = PS4.Down();
-    input.dpadLeft  = PS4.Left();
-    input.dpadRight = PS4.Right();
+    // --- D-pad ---
+    input.dpadUp    = myGamepad->dpad() & DPAD_UP;
+    input.dpadDown  = myGamepad->dpad() & DPAD_DOWN;
+    input.dpadLeft  = myGamepad->dpad() & DPAD_LEFT;
+    input.dpadRight = myGamepad->dpad() & DPAD_RIGHT;
 
-    // --- System Buttons ---
-    input.options  = PS4.Options();
-    input.share    = PS4.Share();
-    input.ps       = PS4.PSButton();
-    input.touchpad = PS4.Touchpad();
+    // --- System ---
+    input.options  = myGamepad->miscButton();
+    input.share    = false; // not always mapped
+    input.ps       = myGamepad->miscSystem();
+    input.touchpad = false;
 
     return input;
 }
-
