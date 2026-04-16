@@ -177,34 +177,89 @@ controller input → mapping → Intent
 
 ---
 
-## ✅ Phase 7 – Motor Control (Final Integration Layer)
+## ✅ Phase 7 – Motor Driver & Bench Control
 
-**Goal:** Convert intent → movement
+**Goal:** Prove motor control in isolation (no robot yet)
 
 ### Tasks:
-- Setup motor driver
-- PWM control
-- Convert:
+- Select motor driver (DRV8833, BTS7960, etc.)
+- Wire:
+  - ESP32 → driver
+  - Driver → 1–2 motors
+- Implement PWM output
+- Test:
+  - Forward / reverse
+  - Speed control
+- Identify:
+  - Minimum PWM to move motor (deadband)
+  - Direction correctness
+
+### Example:
+```cpp
+// basic test
+setMotor(LEFT, 100);
+delay(2000);
+setMotor(LEFT, 0);
+```
+
+### Success Criteria:
+- Motors respond predictably
+- No ESP32 resets
+- PWM scaling understood
+
+---
+
+## ✅ Phase 8 – Control Mapping (Intent → Motors)
+
+**Goal:** Integrate your control system with real motor behaviour
+
+### Tasks:
+- Map:
 ```cpp
 left  = linear + angular;
 right = linear - angular;
 ```
+- Apply:
+  - Deadzone (input)
+  - Minimum motor threshold (output)
+  - Clamping
+- Smooth transitions
 
 ### Safety:
-- Kill switch:
 ```cpp
 if (noInputFor > 500ms) stopMotors();
 ```
-- Stop on disconnect
 
 ### Success Criteria:
-- Smooth motion
-- Stable control
-- Safe behavior
+- Smooth ramping
+- No jitter
+- Predictable turning
 
 ---
 
-# ✅ Phase 8 – Controller Abstraction Layer (Multi-Controller Support)
+## ✅ Phase 9 – Physical Platform (Robot Hardware)
+
+**Goal:** Assemble the full robot AFTER control is proven
+
+### Tasks:
+- Mount:
+  - Motors
+  - Wheels
+  - Chassis
+  - ESP32
+  - Battery
+- Clean wiring (short, secure, noise-aware)
+- Add physical kill switch
+- Balance weight distribution
+
+### Success Criteria:
+- Stable movement
+- No wiring issues under motion
+- No electrical noise causing resets
+
+---
+
+# ✅ Phase 10 – Controller Abstraction Layer (Multi-Controller Support)
 
 **Goal:** Decouple input system from specific controller hardware (PS4, Xbox, etc.)
 
