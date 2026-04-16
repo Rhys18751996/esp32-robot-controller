@@ -204,7 +204,55 @@ if (noInputFor > 500ms) stopMotors();
 
 ---
 
-## 🔧 Design Decisions
+# ✅ Phase 8 – Controller Abstraction Layer (Multi-Controller Support)
+
+**Goal:** Decouple input system from specific controller hardware (PS4, Xbox, etc.)
+
+### Tasks:
+- Create `IController` interface:
+  - `begin()`
+  - `isConnected()`
+  - `read() -> RawInput`
+- Refactor existing PS4 logic into `PS4ControllerInput` class
+- Implement controller-agnostic `RawInput` mapping
+- Add second controller implementation stub (e.g. `XboxControllerInput`)
+- Create controller factory / selector:
+  - Compile-time flag OR runtime selection
+- Ensure all input flows through:
+  ```cpp
+  RawInput input = controller->read();
+  ```
+- Remove direct `PS4.*` calls from main loop and other modules
+
+### Architecture:
+```
+[ PS4 Controller ] ─┐
+                    ├──> [ Controller Adapter ] ───> RawInput ───> System
+[ Xbox Controller ] ─┘
+```
+
+### Success Criteria:
+- System runs unchanged when switching controller implementations
+- No hardware-specific code outside controller classes
+- `RawInput` fully populated regardless of controller type
+- Easy to add new controllers without modifying core logic
+
+### Stretch Goals (Optional but Powerful):
+- Auto-detect controller type (Bluetooth device name / VID-PID)
+- Hot-swapping controllers at runtime
+- Add input capability flags (e.g. hasTouchpad, hasGyro)
+- Add debug logging:
+  - Active controller type
+  - Connection events
+
+### ⚠️ Risks / Considerations:
+- Different libraries expose different ranges and button naming
+- Xbox BLE support on ESP32 is limited compared to PS4
+- Some features (e.g. touchpad, gyro) may not map across controllers
+
+---
+
+## 🔧 General Design Decisions
 
 - Typed intent model
 - JSON only for config

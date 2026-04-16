@@ -36,7 +36,7 @@ void readInputs() {
     input = readInput();
 
     if (input.state != lastState) {
-        logf(INFO, "Controller state: %d", controllerStateToString(input.state));
+        logf(INFO, "Controller state: %s", controllerStateToString(input.state));
         lastState = input.state;
     }
 }
@@ -62,8 +62,10 @@ void applySafety() {
         // reset intent when disconnected
         currentIntent.linear = 0;
         currentIntent.angular = 0;
+        currentIntent.boost = false;
+        currentIntent.stop = true; 
 
-        // reset smoothing when disconnected
+        // reset smoothing carry over when disconnected
         lastLinear = 0;
         lastAngular = 0;
     }
