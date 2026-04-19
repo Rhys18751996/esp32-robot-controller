@@ -3,5 +3,5 @@
 
 #include "input.h"
 
-void initBluepadAdapter();
-RawInput readBluepadInput();
+void initGamepad();
+RawInput readGamepad();

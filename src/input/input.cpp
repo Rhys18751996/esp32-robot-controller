@@ -1,10 +1,12 @@
+// src/input/input.cpp
+
 #include "input.h"
 #include "bluepad_adapter.h"
 
 void initInput() {
-    initBluepadAdapter();
+    initGamepad();
 }
 
 RawInput readInput() {
-    return readBluepadInput();
+    return readGamepad();
 }

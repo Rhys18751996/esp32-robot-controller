@@ -53,8 +53,8 @@ void mapToIntent() {
     lastLinear = currentIntent.linear;
     lastAngular = currentIntent.angular;
 
-    currentIntent.boost = input.cross;
-    currentIntent.stop = input.circle;
+    //currentIntent.boost = ?;
+    //currentIntent.stop = ?;
 }
 
 void applySafety() {

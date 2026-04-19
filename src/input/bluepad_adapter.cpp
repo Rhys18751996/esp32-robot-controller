@@ -1,95 +1,107 @@
-// /src/input/bluepad_adapter.cpp
+// src/input/bluepad_adapter.cpp
+
 #include "bluepad_adapter.h"
+#include "input.h"
 #include <Bluepad32.h>
 
-// --- Internal state ---
-static GamepadPtr gamepad = nullptr;
+static ControllerPtr controllers[BP32_MAX_GAMEPADS];
 
-// --- Normalization ---
-static float normalizeAxis(int value) {
-    return value / 511.0f; // -511 → 512
-}
-
-static float normalizeTrigger(int value) {
-    return value / 1023.0f; // 0 → 1023
-}
+// --- Normalize ---
+static float normAxis(int v) { return v / 512.0f; }
+static float normTrigger(int v) { return v / 1023.0f; }
 
 // --- Callbacks ---
-static void onConnectedGamepad(GamepadPtr gp) {
-    Serial.println("[Adapter] Gamepad connected");
-    gamepad = gp;
+void onConnectedController(ControllerPtr ctl) {
+    for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+        if (controllers[i] == nullptr) {
+            Serial.printf("[BP32] Connected idx=%d\n", i);
+            controllers[i] = ctl;
+            return;
+        }
+    }
+    Serial.println("[BP32] No free slot");
 }
 
-static void onDisconnectedGamepad(GamepadPtr gp) {
-    Serial.println("[Adapter] Gamepad disconnected");
-    if (gamepad == gp) {
-        gamepad = nullptr;
+void onDisconnectedController(ControllerPtr ctl) {
+    for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+        if (controllers[i] == ctl) {
+            Serial.printf("[BP32] Disconnected idx=%d\n", i);
+            controllers[i] = nullptr;
+            return;
+        }
     }
 }
 
 // --- Init ---
-void initBluepadAdapter() {
-    BP32.setup(&onConnectedGamepad, &onDisconnectedGamepad);
+void initGamepad() {
+    BP32.setup(&onConnectedController, &onDisconnectedController);
 
-    // Optional but useful during dev
-    BP32.forgetBluetoothKeys();
+    for (auto &c : controllers) c = nullptr;
 
-    Serial.println("[Adapter] Bluepad32 initialized");
+    Serial.println("[BP32] Ready");
+}
+
+// --- Pick first active controller ---
+static ControllerPtr getActiveController() {
+    for (auto ctl : controllers) {
+        if (ctl && ctl->isConnected() && ctl->isGamepad()) {
+            return ctl;
+        }
+    }
+    return nullptr;
 }
 
 // --- Read ---
-RawInput readBluepadInput() {
+RawInput readGamepad() {
     RawInput input = {};
 
     BP32.update();
 
-    input.connected = (gamepad && gamepad->isConnected());
+    ControllerPtr ctl = getActiveController();
+
+    input.connected = (ctl != nullptr);
     input.state = input.connected
         ? ControllerState::Connected
         : ControllerState::Disconnected;
 
-    if (!input.connected) {
-        return input;
-    }
+    if (!ctl) return input;
 
-    // --- Sticks ---
-    input.leftStickX  = normalizeAxis(gamepad->axisX());
-    input.leftStickY  = -normalizeAxis(gamepad->axisY());
-    input.rightStickX = normalizeAxis(gamepad->axisRX());
-    input.rightStickY = -normalizeAxis(gamepad->axisRY());
+    // sticks
+    input.leftStickX  = normAxis(ctl->axisX());
+    input.leftStickY  = -normAxis(ctl->axisY());
+    input.rightStickX = normAxis(ctl->axisRX());
+    input.rightStickY = -normAxis(ctl->axisRY());
 
-    // --- Triggers ---
-    input.L2 = normalizeTrigger(gamepad->brake());
-    input.R2 = normalizeTrigger(gamepad->throttle());
+    // triggers
+    input.leftTrigger  = normTrigger(ctl->brake());
+    input.rightTrigger = normTrigger(ctl->throttle());
 
-    // --- Face Buttons ---
-    input.cross    = gamepad->a();
-    input.circle   = gamepad->b();
-    input.square   = gamepad->x();
-    input.triangle = gamepad->y();
+    // face buttons (already Xbox mapping in BP32)
+    input.A = ctl->a();
+    input.B = ctl->b();
+    input.X = ctl->x();
+    input.Y = ctl->y();
 
-    // --- Shoulder ---
-    input.L1 = gamepad->l1();
-    input.R1 = gamepad->r1();
+    // shoulders
+    input.LB = ctl->l1();
+    input.RB = ctl->r1();
 
-    // --- Stick Click ---
-    input.L3 = gamepad->thumbL();
-    input.R3 = gamepad->thumbR();
+    // stick clicks
+    input.leftStickClick  = ctl->thumbL();
+    input.rightStickClick = ctl->thumbR();
 
-    // --- D-pad ---
-    uint8_t dpad = gamepad->dpad();
+    // dpad
+    uint8_t dpad = ctl->dpad();
     input.dpadUp    = dpad & DPAD_UP;
     input.dpadDown  = dpad & DPAD_DOWN;
     input.dpadLeft  = dpad & DPAD_LEFT;
     input.dpadRight = dpad & DPAD_RIGHT;
 
-    // --- System ---
-    input.options  = gamepad->miscButton();
-    input.ps       = gamepad->miscSystem();
-
-    // Not consistently supported across controllers
-    input.share    = false;
-    input.touchpad = false;
+    // system buttons
+    uint16_t misc = ctl->miscButtons();
+    input.start = misc & MISC_BUTTON_START;
+    input.back  = misc & MISC_BUTTON_SELECT;
+    input.guide = misc & MISC_BUTTON_SYSTEM;
 
     return input;
 }
