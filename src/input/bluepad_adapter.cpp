@@ -7,8 +7,25 @@
 static ControllerPtr controllers[BP32_MAX_GAMEPADS];
 
 // --- Normalize ---
-static float normAxis(int v) { return v / 512.0f; }
-static float normTrigger(int v) { return v / 1023.0f; }
+static float clamp01(float v) {
+    if (v < 0.0f) return 0.0f;
+    if (v > 1.0f) return 1.0f;
+    return v;
+}
+
+static float clamp11(float v) {
+    if (v < -1.0f) return -1.0f;
+    if (v > 1.0f) return 1.0f;
+    return v;
+}
+
+static float normAxis(int v) {
+    return clamp11(v / 512.0f);
+}
+
+static float normTrigger(int v) {
+    return clamp01(v / 1023.0f);
+}
 
 // --- Callbacks ---
 void onConnectedController(ControllerPtr ctl) {

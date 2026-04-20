@@ -53,8 +53,8 @@ void mapToIntent() {
     lastLinear = currentIntent.linear;
     lastAngular = currentIntent.angular;
 
-    //currentIntent.boost = ?;
-    //currentIntent.stop = ?;
+    currentIntent.boost = input.RB;
+    currentIntent.stop = input.B;
 }
 
 void applySafety() {
