@@ -35,9 +35,7 @@ void onDisconnectedController(ControllerPtr ctl) {
 // --- Init ---
 void initGamepad() {
     BP32.setup(&onConnectedController, &onDisconnectedController);
-
     for (auto &c : controllers) c = nullptr;
-
     Serial.println("[BP32] Ready");
 }
 

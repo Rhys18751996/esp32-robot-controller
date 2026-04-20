@@ -11,7 +11,6 @@ void setup() {
     delay(1000);
     
     log(INFO, "System starting");
-
     printMacAddresses();
 
     initControl();
