@@ -18,7 +18,12 @@ void updateLoop() {
     unsigned long now = millis();
 
     if (now - lastUpdate >= LOOP_INTERVAL_MS) {
-        lastUpdate += LOOP_INTERVAL_MS;
+        // Keep cadence steady, but avoid burst catch-up after long pauses.
+        if (now - lastUpdate > LOOP_INTERVAL_MS * 2) {
+            lastUpdate = now;
+        } else {
+            lastUpdate += LOOP_INTERVAL_MS;
+        }
 
         counter++;
         if (counter % 50 == 0) {
