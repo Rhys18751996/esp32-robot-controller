@@ -12,22 +12,22 @@ struct RawInput {
     float rightStickY;
 
     // --- Triggers (0.0 → 1.0) ---
-    float L2;
-    float R2;
+    float leftTrigger;
+    float rightTrigger;
 
-    // --- Face Buttons ---
-    bool cross;
-    bool circle;
-    bool square;
-    bool triangle;
+    // --- Face Buttons (Xbox layout) ---
+    bool A;
+    bool B;
+    bool X;
+    bool Y;
 
     // --- Shoulder Buttons ---
-    bool L1;
-    bool R1;
+    bool LB;
+    bool RB;
 
     // --- Stick Clicks ---
-    bool L3;
-    bool R3;
+    bool leftStickClick;
+    bool rightStickClick;
 
     // --- D-Pad ---
     bool dpadUp;
@@ -36,10 +36,9 @@ struct RawInput {
     bool dpadRight;
 
     // --- System Buttons ---
-    bool options;
-    bool share;
-    bool ps;
-    bool touchpad;
+    bool start;     // Menu
+    bool back;      // View
+    bool guide;     // Xbox button
 
     // --- Meta ---
     bool connected;

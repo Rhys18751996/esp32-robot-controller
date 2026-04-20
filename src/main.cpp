@@ -4,15 +4,15 @@
 #include "system/loop.h"
 #include "utils/log.h"
 #include "control/control.h"
-#include <PS4Controller.h>
-#include "esp_bt_device.h"
+#include "system/mac.h"
 
 void setup() {
     Serial.begin(115200);
     delay(1000);
     
     log(INFO, "System starting");
-    //MAC: 30:ae:a4:ff:16:10
+    printMacAddresses();
+
     initControl();
     initLoop();
 }
