@@ -1,22 +1,20 @@
-// src/control/control.cpp
+#include <Arduino.h>
+
 #include "../system/types.h"
 #include "../input/input.h"
+#include "../mapping/mapping.h"
 #include "../utils/log.h"
-#include <math.h>
 
 RawInput input;
 Intent currentIntent;
-static float lastLinear = 0;
-static float lastAngular = 0;
 static ControllerState lastState = ControllerState::Disconnected;
 
-float applyDeadzone(float value, float deadzone = 0.05f) {
-    if (fabs(value) < deadzone) return 0.0f;
-    return value;
-}
-
-float smooth(float current, float previous, float alpha = 0.2f) {
-    return alpha * current + (1 - alpha) * previous;
+namespace {
+// Edge detection + output state memory for GPIO actions.
+bool lastPulseAction = false;
+bool lastToggleAction = false;
+bool togglePinState = false;
+unsigned long pulsePinDeactivateAtMs = 0;
 }
 
 const char* controllerStateToString(ControllerState state) {
@@ -30,11 +28,25 @@ const char* controllerStateToString(ControllerState state) {
 
 void initControl() {
     initInput();
+    initMapping();
+
+    // Configure output pins from mapping config (no hardcoded pins here).
+    const MappingConfig& mapCfg = getMappingConfig();
+    pinMode(mapCfg.pulsePin, OUTPUT);
+    pinMode(mapCfg.togglePin, OUTPUT);
+    pinMode(mapCfg.holdPin, OUTPUT);
+    digitalWrite(mapCfg.pulsePin, LOW);
+    digitalWrite(mapCfg.togglePin, LOW);
+    digitalWrite(mapCfg.holdPin, LOW);
+
+    logf(INFO, "Output pins initialized: pulse=%u toggle=%u hold=%u", mapCfg.pulsePin,
+         mapCfg.togglePin, mapCfg.holdPin);
 }
 
 void readInputs() {
     input = readInput();
 
+    // Log only state transitions to avoid serial spam.
     if (input.state != lastState) {
         logf(INFO, "Controller state: %s", controllerStateToString(input.state));
         lastState = input.state;
@@ -42,42 +54,41 @@ void readInputs() {
 }
 
 void mapToIntent() {
-    // deadzone
-    float linear = applyDeadzone(input.leftStickY);
-    float angular = applyDeadzone(input.leftStickX);
-
-    // smoothing
-    currentIntent.linear = smooth(linear, lastLinear);
-    currentIntent.angular = smooth(angular, lastAngular);
-
-    lastLinear = currentIntent.linear;
-    lastAngular = currentIntent.angular;
-
-    currentIntent.boost = input.RB;
-    currentIntent.stop = input.B;
+    currentIntent = mapInputToIntent(input);
 }
 
 void applySafety() {
-    if (!input.connected) {
-        // reset intent when disconnected
-        currentIntent.linear = 0;
-        currentIntent.angular = 0;
-        currentIntent.boost = false;
-        currentIntent.stop = true; 
-
-        // reset smoothing carry over when disconnected
-        lastLinear = 0;
-        lastAngular = 0;
-    }
-
-    if (currentIntent.stop) {
-        currentIntent.linear = 0;
-        currentIntent.angular = 0;
-    }
+    // Safety currently centralized in mapInputToIntent().
+    // Keeping this function in the loop preserves Phase 0 architecture shape.
 }
 
 void outputControl() {
-    // TODO: motors (later phase)
+    const MappingConfig& mapCfg = getMappingConfig();
+
+    // Pulse output: goes HIGH once on button press, then auto-LOW after duration.
+    if (currentIntent.pulseAction && !lastPulseAction) {
+        digitalWrite(mapCfg.pulsePin, HIGH);
+        pulsePinDeactivateAtMs = millis() + mapCfg.pulseDurationMs;
+    }
+
+    if (pulsePinDeactivateAtMs != 0 &&
+        static_cast<long>(millis() - pulsePinDeactivateAtMs) >= 0) {
+        digitalWrite(mapCfg.pulsePin, LOW);
+        pulsePinDeactivateAtMs = 0;
+    }
+
+    // Toggle output: flips state only on rising edge.
+    if (currentIntent.toggleAction && !lastToggleAction) {
+        togglePinState = !togglePinState;
+        digitalWrite(mapCfg.togglePin, togglePinState ? HIGH : LOW);
+    }
+
+    // Hold output: directly mirrors button state.
+    digitalWrite(mapCfg.holdPin, currentIntent.holdAction ? HIGH : LOW);
+
+    // Store current states for next-loop edge detection.
+    lastPulseAction = currentIntent.pulseAction;
+    lastToggleAction = currentIntent.toggleAction;
 }
 
 void update() {
@@ -89,10 +100,8 @@ void update() {
     debugCounter++;
 
     if (debugCounter % 50 == 0) {
-        logf(INFO, "Intent L: %.2f A: %.2f Conn: %d",
-            currentIntent.linear,
-            currentIntent.angular,
-            input.connected);
+        logf(INFO, "Intent L: %.2f A: %.2f Conn: %d", currentIntent.linear,
+             currentIntent.angular, input.connected);
     }
 
     outputControl();
